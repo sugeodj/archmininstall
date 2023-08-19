@@ -75,48 +75,71 @@ read -p "Enter the target drive (e.g., sda): " target_drive
 validate_input "$target_drive"
 
 # Update keys for install to prevent errors
-echo "Updating keys for install"
-pacman -Syy --noconfirm
-pacman-key --init
-pacman-key --populate
-pacman -S archlinux-keyring --noconfirm
+echo "Updating keys for install..."
+if pacman -Syy --noconfirm && pacman-key --init && pacman-key --populate && pacman -S archlinux-keyring --noconfirm; then
+    print_success "Keys updated successfully."
+else
+    print_error "Failed to update keys."
+    exit 1
+fi
 
 # Load selected keyboard layout
 echo "Step 1: Loading selected keyboard layout..."
-loadkeys $keyboard_layout
-echo "Keyboard layout loaded."
+if loadkeys $keyboard_layout; then
+    print_success "Keyboard layout loaded successfully."
+else
+    print_error "Failed to load keyboard layout."
+    exit 1
+fi
 
 # Update system clock
 echo "Step 2: Updating system clock..."
-timedatectl set-ntp true
-echo "System clock updated."
+if timedatectl set-ntp true; then
+    print_success "System clock updated successfully."
+else
+    print_error "Failed to update system clock."
+    exit 1
+fi
 
 # Partitioning using fdisk
 echo "Step 3: Partitioning disk..."
-echo -e "g\nn\n1\n\n+512M\nt\n1\nn\n2\n\n+8G\nt\n2\nn\n3\n\n\nw" | fdisk /dev/$target_drive <<< "y"
+if echo -e "g\nn\n1\n\n+512M\nt\n1\nn\n2\n\n+8G\nt\n2\nn\n3\n\n\nw" | fdisk /dev/$target_drive <<< "y"; then
+    print_success "Disk partitioned successfully."
+else
+    print_error "Failed to partition disk."
+    exit 1
+fi
 
 # Formatting
 echo "Step 4: Formatting partitions..."
-mkfs.fat -F 32 /dev/${target_drive}1
-mkswap /dev/${target_drive}2
-mkfs.ext4 /dev/${target_drive}3
-mount /dev/${target_drive}3 /mnt
-mkdir -p /mnt/boot/efi
-mount /dev/${target_drive}1 /mnt/boot/efi
-swapon /dev/${target_drive}2
+if mkfs.fat -F 32 /dev/${target_drive}1 && mkswap /dev/${target_drive}2 && mkfs.ext4 /dev/${target_drive}3 && mount /dev/${target_drive}3 /mnt && mkdir -p /mnt/boot/efi && mount /dev/${target_drive}1 /mnt/boot/efi && swapon /dev/${target_drive}2; then
+    print_success "Partitions formatted and mounted successfully."
+else
+    print_error "Failed to format partitions."
+    exit 1
+fi
 
 # Install base system and extras
 echo "Step 5: Installing base system and extras... (may take from 5-15 minutes depending on network speeds)"
-pacstrap /mnt base linux linux-firmware sof-firmware nano networkmanager grub efibootmgr base-devel git neovim --noconfirm
-echo "Base system installed succesfully!"
+if pacstrap /mnt base linux linux-firmware sof-firmware nano networkmanager grub efibootmgr base-devel git neovim --noconfirm; then
+    print_success "Base system and extras installed successfully."
+else
+    print_error "Failed to install base system and extras."
+    exit 1
+fi
 
 # Generate fstab
 echo "Step 6: Generating fstab..."
-genfstab /mnt >> /mnt/etc/fstab
+if genfstab /mnt >> /mnt/etc/fstab; then
+    print_success "fstab generated successfully."
+else
+    print_error "Failed to generate fstab."
+    exit 1
+fi
 
 echo "Step 7: Entering chroot environment..."
 # Chroot into the new system and execute commands inside chroot environment
-arch-chroot /mnt /bin/bash -c "
+if arch-chroot /mnt /bin/bash -c "
     echo 'Step 8: Setting time zone and generating locale...';
     timedatectl set-timezone $timezone;
     hwclock --systohc;
@@ -137,7 +160,12 @@ arch-chroot /mnt /bin/bash -c "
     echo '$username:$user_password' | chpasswd;
     echo 'Step 14: Allowing superusers to use sudo...';
     sed -i '/%wheel ALL=(ALL) ALL/s/^# //' /etc/sudoers
-"
+"; then
+    print_success "Chroot environment set up successfully."
+else
+    print_error "Failed to set up chroot environment."
+    exit 1
+fi
 
 # Exit chroot
 echo "Installation complete! Exiting chroot environment..."
@@ -159,4 +187,4 @@ echo "2"
 sleep 1
 echo "1"
 sleep 1
-echo "Enjoy arch linux!"
+echo "Enjoy arch linux!" 
