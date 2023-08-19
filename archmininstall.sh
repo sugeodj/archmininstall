@@ -111,7 +111,22 @@ fi
 
 # Partitioning using fdisk
 echo "Step 3: Partitioning disk..."
-if echo -e "g\nn\n1\n\n+512M\nt\n1\nn\n2\n\n+8G\nt\n2\nn\n3\n\n\nw" | fdisk /dev/$target_drive; then
+if fdisk /dev/$target_drive << EOF
+g # Create a new GPT partition table
+n # Create a new partition
+1 # Partition number
+   # Default: First sector
++512M # Size
+n # Create a new partition
+2 # Partition number
+   # Default: First sector
++8G # Size
+n # Create a new partition
+3 # Partition number
+   # Default: First sector
+   # Default: Last sector (remaining space)
+w # Write changes
+EOF; then
     print_success "Disk partitioned successfully."
 else
     print_error "Failed to partition disk."
