@@ -111,22 +111,23 @@ fi
 
 # Partitioning using fdisk
 echo "Step 1: Partitioning disk..."
-fdisk /dev/$target_drive << EOF
-g # Create a new GPT partition table
-n # Create a new partition
-1 # Partition number
-   # Default: First sector
-+512M # Size
-n # Create a new partition
-2 # Partition number
-   # Default: First sector
-+8G # Size
-n # Create a new partition
-3 # Partition number
-   # Default: First sector
-   # Default: Last sector (remaining space)
-w # Write changes
-EOF
+{
+  echo "g"   # Create a new GPT partition table
+  echo "n"   # Create a new partition
+  echo "1"   # Partition number
+  echo        # Default: First sector
+  echo "+512M" # Size
+  echo "n"   # Create a new partition
+  echo "2"   # Partition number
+  echo        # Default: First sector
+  echo "+8G" # Size
+  echo "n"   # Create a new partition
+  echo "3"   # Partition number
+  echo        # Default: First sector
+  echo        # Default: Last sector (remaining space)
+  echo "w"   # Write changes
+} | fdisk /dev/$target_drive
+
 
 # Formatting
 echo "Step 4: Formatting partitions..."
