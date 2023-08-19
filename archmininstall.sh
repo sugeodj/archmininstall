@@ -61,7 +61,7 @@ validate_input "$target_drive"
 
 # Update keys for install to prevent errors
 echo "Updating keys for install"
-pacman -Syy
+pacman -Syy --noconfirm
 pacman-key --init
 pacman-key --populate
 pacman -S archlinux-keyring --noconfirm
