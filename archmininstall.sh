@@ -120,7 +120,7 @@ n # Create a new partition
 n # Create a new partition
 2 # Partition number
    # Default: First sector
-+8G # Size
++4G # Size
 n # Create a new partition
 3 # Partition number
    # Default: First sector
