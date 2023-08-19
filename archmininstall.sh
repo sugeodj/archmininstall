@@ -50,14 +50,14 @@ fi
 # Prompt for user input
 read -p "Enter your desired username: " username
 validate_input "$username"
+echo 
 
 prompt_password "$username" user_password
 echo
-validate_input "$user_password"
+
 
 prompt_password "root" root_password
 echo
-validate_input "$root_password"
 
 # Set default values for hostname, keyboard layout, locale, and timezone
 default_hostname="archlinux"
@@ -111,12 +111,22 @@ fi
 
 # Partitioning using fdisk
 echo "Step 1: Partitioning disk..."
-if echo -e "o\nn\np\n1\n\n+512M\nt\n1\nn\np\n2\n\n+8G\nt\n2\nn\np\n3\n\n\nw" | fdisk /dev/$target_drive; then
-    print_success "Disk partitioned successfully."
-else
-    print_error "Failed to partition disk."
-    exit 1
-fi
+fdisk /dev/$target_drive << EOF
+g # Create a new GPT partition table
+n # Create a new partition
+1 # Partition number
+   # Default: First sector
++512M # Size
+n # Create a new partition
+2 # Partition number
+   # Default: First sector
++8G # Size
+n # Create a new partition
+3 # Partition number
+   # Default: First sector
+   # Default: Last sector (remaining space)
+w # Write changes
+EOF
 
 # Formatting
 echo "Step 4: Formatting partitions..."
