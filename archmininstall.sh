@@ -10,28 +10,40 @@ validate_input() {
 
 # Function to prompt for and confirm passwords
 prompt_password() {
-    read -sp "Enter password for $1: " password1
-    echo
-    validate_input "$password1"
+    while true; do
+        read -sp "Enter password for $1: " password1
+        echo
+        validate_input "$password1"
 
-    read -sp "Confirm password for $1: " password2
-    echo
-    validate_input "$password2"
+        read -sp "Confirm password for $1: " password2
+        echo
+        validate_input "$password2"
 
-    if [ "$password1" != "$password2" ]; then
-        echo "Error: Passwords do not match."
-        exit 1
-    fi
+        if [ "$password1" != "$password2" ]; then
+            echo "Error: Passwords do not match. Please try again."
+        else
+            eval "$2=$password1"
+            break
+        fi
+    done
+}
 
-    eval "$2=$password1"
+# Function to print error messages in red
+print_error() {
+    echo -e "\033[31mError: $1\033[0m"
+}
+
+# Function to print success messages in green
+print_success() {
+    echo -e "\033[32mSuccess: $1\033[0m"
 }
 
 # Check internet connection
-echo "Step 1: Internet connection check..."
+echo "Checking internet connection..."
 if ping -c 1 archlinux.org &> /dev/null; then
-    echo "Internet connection established."
+    print_success "Internet connection established."
 else
-    echo "Error: Unable to establish internet connection."
+    print_error "Unable to establish internet connection."
     exit 1
 fi
 
@@ -46,6 +58,9 @@ validate_input "$user_password"
 read -sp "Enter root password: " root_password
 echo
 validate_input "$root_password"
+
+read -p "Enter your desired hostname: " hostname
+validate_input "$hostname"
 
 read -p "Enter desired keyboard layout (e.g., us, pt-latin1): " keyboard_layout
 validate_input "$keyboard_layout"
@@ -67,32 +82,18 @@ pacman-key --populate
 pacman -S archlinux-keyring --noconfirm
 
 # Load selected keyboard layout
-echo "Step 2: Loading selected keyboard layout..."
+echo "Step 1: Loading selected keyboard layout..."
 loadkeys $keyboard_layout
 echo "Keyboard layout loaded."
 
 # Update system clock
-echo "Step 3: Updating system clock..."
+echo "Step 2: Updating system clock..."
 timedatectl set-ntp true
 echo "System clock updated."
 
 # Partitioning using fdisk
-fdisk /dev/$target_drive << EOF
-g # Create a new GPT partition table
-n # Create a new partition
-1 # Partition number
-   # Default: First sector
-+512M # Size
-n # Create a new partition
-2 # Partition number
-   # Default: First sector
-+8G # Size
-n # Create a new partition
-3 # Partition number
-   # Default: First sector
-   # Default: Last sector (remaining space)
-w # Write changes
-EOF
+echo "Step 3: Partitioning disk..."
+echo -e "g\nn\n1\n\n+512M\nt\n1\nn\n2\n\n+8G\nt\n2\nn\n3\n\n\nw" | fdisk /dev/$target_drive <<< "y"
 
 # Formatting
 echo "Step 4: Formatting partitions..."
@@ -100,12 +101,12 @@ mkfs.fat -F 32 /dev/${target_drive}1
 mkswap /dev/${target_drive}2
 mkfs.ext4 /dev/${target_drive}3
 mount /dev/${target_drive}3 /mnt
-mkdir /mnt/boot/efi
+mkdir -p /mnt/boot/efi
 mount /dev/${target_drive}1 /mnt/boot/efi
 swapon /dev/${target_drive}2
 
 # Install base system and extras
-echo "Step 5: Installing base system and extras... may take from 5-15 minutes depending on network speeds"
+echo "Step 5: Installing base system and extras... (may take from 5-15 minutes depending on network speeds)"
 pacstrap /mnt base linux linux-firmware sof-firmware nano networkmanager grub efibootmgr base-devel git neovim --noconfirm
 echo "Base system installed succesfully!"
 
@@ -114,51 +115,48 @@ echo "Step 6: Generating fstab..."
 genfstab /mnt >> /mnt/etc/fstab
 
 echo "Step 7: Entering chroot environment..."
-# Chroot into the new system
-arch-chroot /mnt
+# Chroot into the new system and execute commands inside chroot environment
+arch-chroot /mnt /bin/bash -c "
+    echo 'Step 8: Setting time zone and generating locale...';
+    timedatectl set-timezone $timezone;
+    hwclock --systohc;
+    sed -i '/$locale/s/^#//' /etc/locale.gen;
+    locale-gen;
+    echo 'Step 9: Setting keyboard layout..';
+    echo 'LANG=$locale' >> /etc/locale.conf;
+    echo 'KEYMAP=$keyboard_layout' >> /etc/vconsole.conf;
+    echo 'Step 10: Setting hostname...';
+    echo $hostname >> /etc/hostname;
+    echo 'Step 11: Setting up grub boot loader...';
+    grub-install /dev/${target_drive};
+    grub-mkconfig -o /boot/grub/grub.cfg;
+    echo 'Step 12: Setting root password...';
+    echo 'root:$root_password' | chpasswd;
+    echo 'Step 13: Adding user and setting password...';
+    useradd -m -G wheel $username;
+    echo '$username:$user_password' | chpasswd;
+    echo 'Step 14: Allowing superusers to use sudo...';
+    sed -i '/%wheel ALL=(ALL) ALL/s/^# //' /etc/sudoers
+"
 
-# Set time zone
-echo "Step 8: Setting time zone and generating locale..."
-timedatectl set-timezone $timezone
-hwclock --systohc
+# Exit chroot
+echo "Installation complete! Exiting chroot environment..."
+exit
 
-# Uncomment desired locale using sed
-sed -i "/$locale/s/^#//" /etc/locale.gen
-locale-gen
-echo "LANG=$locale" >> /etc/locale.conf
+# Unmount drives
+echo "Unmounting partitions..."
+umount -a 
 
-# Set keyboard layout
-echo "KEYMAP=$keyboard_layout" >> /etc/vconsole.conf
-
-# Set hostname
-echo "archmini" >> /etc/hostname
-
-# Configure /etc/hosts
-#echo -e "127.0.0.1\tlocalhost\n::1\tlocalhost\n127.0.1.1\tarchx64.localdomain\tarchx64" >> /etc/hosts
-
-# Enable NetworkManager
-systemctl enable NetworkManager.service
-
-# Configure GRUB bootloader
-echo "Step 9: Configuring bootloader..."
-grub-install /dev/${target_drive}
-grub-mkconfig -o /boot/grub/grub.cfg
-
-echo "Step 10: Setting root and user passwords..."
-
-# Set root password
-echo "root:$root_password" | chpasswd
-
-# Create new user and set password
-useradd -m -G wheel $username
-echo "$username:$user_password" | chpasswd
-
-
-# Uncomment sudo access for users in visudo
-echo "Step 11: Enabling sudo access..."
-sed -i '/%wheel ALL=(ALL) ALL/s/^# //' /etc/sudoer
-
-# Exit chroot and reboot
-echo "Installation complete! Exiting chroot environment and rebooting..."
-exit && reboot
-
+# Rebooting system
+echo "Rebooting the system in..."
+echo "5"
+sleep 1
+echo "4"
+sleep 1
+echo "3"
+sleep 1
+echo "2"
+sleep 1
+echo "1"
+sleep 1
+echo "Enjoy arch linux!"
