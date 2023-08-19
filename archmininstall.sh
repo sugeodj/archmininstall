@@ -110,8 +110,8 @@ else
 fi
 
 # Partitioning using fdisk
-echo "Step 3: Partitioning disk..."
-if echo -e "g\nn\n1\n\n+512M\nt\n1\nn\n2\n\n+4G\nt\n2\nn\n3\n\n\nw" | fdisk /dev/$target_drive;then
+echo "Step 1: Partitioning disk..."
+if echo -e "o\nn\np\n1\n\n+512M\nt\n1\nn\np\n2\n\n+8G\nt\n2\nn\np\n3\n\n\nw" | fdisk $target_drive; then
     print_success "Disk partitioned successfully."
 else
     print_error "Failed to partition disk."
