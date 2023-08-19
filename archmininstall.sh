@@ -27,6 +27,7 @@ prompt_password() {
 }
 
 # Check internet connection
+echo "Step 1: Internet connection check..."
 if ping -c 1 archlinux.org &> /dev/null; then
     echo "Internet connection established."
 else
@@ -59,10 +60,14 @@ read -p "Enter the target drive (e.g., sda): " target_drive
 validate_input "$target_drive"
 
 # Load selected keyboard layout
+echo "Step 2: Loading selected keyboard layout..."
 loadkeys $keyboard_layout
+echo "Keyboard layout loaded."
 
 # Update system clock
+echo "Step 3: Updating system clock..."
 timedatectl set-ntp true
+echo "System clock updated."
 
 # Partitioning using fdisk
 fdisk /dev/$target_drive << EOF
@@ -83,6 +88,7 @@ w # Write changes
 EOF
 
 # Formatting
+echo "Step 4: Formatting partitions..."
 mkfs.fat -F 32 /dev/${target_drive}1
 mkswap /dev/${target_drive}2
 mkfs.ext4 /dev/${target_drive}3
@@ -92,15 +98,20 @@ mount /dev/${target_drive}1 /mnt/boot/efi
 swapon /dev/${target_drive}2
 
 # Install base system and extras
+echo "Step 5: Installing base system and extras... may take from 5-15 minutes depending on network speeds"
 pacstrap /mnt base linux linux-firmware sof-firmware nano networkmanager grub efibootmgr base-devel git neovim
+echo "Base system installed succesfully!"
 
 # Generate fstab
+echo "Step 6: Generating fstab..."
 genfstab /mnt >> /mnt/etc/fstab
 
+echo "Step 7: Entering chroot environment..."
 # Chroot into the new system
 arch-chroot /mnt
 
 # Set time zone
+echo "Step 8: Setting time zone and generating locale..."
 timedatectl set-timezone $timezone
 hwclock --systohc
 
@@ -122,8 +133,11 @@ echo "archmini" >> /etc/hostname
 systemctl enable NetworkManager.service
 
 # Configure GRUB bootloader
+echo "Step 9: Configuring bootloader..."
 grub-install /dev/${target_drive}
 grub-mkconfig -o /boot/grub/grub.cfg
+
+echo "Step 10: Setting root and user passwords..."
 
 # Set root password
 echo "root:$root_password" | chpasswd
@@ -132,9 +146,12 @@ echo "root:$root_password" | chpasswd
 useradd -m -G wheel $username
 echo "$username:$user_password" | chpasswd
 
+
 # Uncomment sudo access for users in visudo
+echo "Step 11: Enabling sudo access..."
 sed -i '/%wheel ALL=(ALL) ALL/s/^# //' /etc/sudoer
 
 # Exit chroot and reboot
+echo "Installation complete! Exiting chroot environment and rebooting..."
 exit && reboot
 
