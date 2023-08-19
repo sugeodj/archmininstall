@@ -51,25 +51,33 @@ fi
 read -p "Enter your desired username: " username
 validate_input "$username"
 
-read -sp "Enter password for $username: " user_password
+prompt_password "$username" user_password
 echo
 validate_input "$user_password"
 
-read -sp "Enter root password: " root_password
+prompt_password "root" root_password
 echo
 validate_input "$root_password"
 
-read -p "Enter your desired hostname: " hostname
+# Set default values for hostname, keyboard layout, locale, and timezone
+default_hostname="archlinux"
+default_keyboard_layout="us"
+default_locale="en_US.UTF-8"
+
+# Prompt for hostname
+read -p "Enter your desired hostname [$default_hostname]: " hostname
+hostname="${hostname:-$default_hostname}"
 validate_input "$hostname"
 
-read -p "Enter desired keyboard layout (e.g., us, pt-latin1): " keyboard_layout
+# Prompt for keyboard layout
+read -p "Enter desired keyboard layout (e.g., us, pt-latin1) [$default_keyboard_layout]: " keyboard_layout
+keyboard_layout="${keyboard_layout:-$default_keyboard_layout}"
 validate_input "$keyboard_layout"
 
-read -p "Enter language/location (e.g., en_US.UTF-8): " locale
+# Prompt for locale
+read -p "Enter language/location (e.g., en_US.UTF-8) [$default_locale]: " locale
+locale="${locale:-$default_locale}"
 validate_input "$locale"
-
-read -p "Enter location for timezone (e.g., Australia/Adelaide): " timezone
-validate_input "$timezone"
 
 read -p "Enter the target drive (e.g., sda): " target_drive
 validate_input "$target_drive"
@@ -103,7 +111,7 @@ fi
 
 # Partitioning using fdisk
 echo "Step 3: Partitioning disk..."
-if echo -e "g\nn\n1\n\n+512M\nt\n1\nn\n2\n\n+8G\nt\n2\nn\n3\n\n\nw" | fdisk /dev/$target_drive <<< "y"; then
+if echo -e "g\nn\n1\n\n+512M\nt\n1\nn\n2\n\n+8G\nt\n2\nn\n3\n\n\nw" | fdisk /dev/$target_drive; then
     print_success "Disk partitioned successfully."
 else
     print_error "Failed to partition disk."
@@ -112,7 +120,7 @@ fi
 
 # Formatting
 echo "Step 4: Formatting partitions..."
-if mkfs.fat -F 32 /dev/${target_drive}1 && mkswap /dev/${target_drive}2 && mkfs.ext4 /dev/${target_drive}3 && mount /dev/${target_drive}3 /mnt && mkdir -p /mnt/boot/efi && mount /dev/${target_drive}1 /mnt/boot/efi && swapon /dev/${target_drive}2; then
+if mkfs.fat -F 32 /dev/${target_drive}1 && mkswap /dev/${target_drive}2 && mkfs.ext4 /dev/${target_drive}3 && mount /dev/${target_drive}3 /mnt && mkdir -p /mnt/boot/efi && mount /dev/${target_drive}1 /mnt/boot/efi && swapon /dev/${target_drive}2 -f; then
     print_success "Partitions formatted and mounted successfully."
 else
     print_error "Failed to format partitions."
@@ -141,7 +149,6 @@ echo "Step 7: Entering chroot environment..."
 # Chroot into the new system and execute commands inside chroot environment
 if arch-chroot /mnt /bin/bash -c "
     echo 'Step 8: Setting time zone and generating locale...';
-    timedatectl set-timezone $timezone;
     hwclock --systohc;
     sed -i '/$locale/s/^#//' /etc/locale.gen;
     locale-gen;
@@ -168,15 +175,7 @@ else
 fi
 
 # Exit chroot
-echo "Installation complete! Exiting chroot environment..."
-exit
-
-# Unmount drives
-echo "Unmounting partitions..."
-umount -a 
-
-# Rebooting system
-echo "Rebooting the system in..."
+print_success "Installation complete! Exiting chroot, umounting drives, and rebooting..."
 echo "5"
 sleep 1
 echo "4"
@@ -188,3 +187,5 @@ sleep 1
 echo "1"
 sleep 1
 echo "Enjoy arch linux!" 
+exit && umount -a && reboot
+
