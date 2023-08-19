@@ -1,0 +1,1 @@
+# arch minimal install script
