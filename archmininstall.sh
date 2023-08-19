@@ -126,7 +126,8 @@ n # Create a new partition
    # Default: First sector
    # Default: Last sector (remaining space)
 w # Write changes
-EOF; then
+EOF
+then
     print_success "Disk partitioned successfully."
 else
     print_error "Failed to partition disk."
