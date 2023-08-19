@@ -59,6 +59,13 @@ validate_input "$timezone"
 read -p "Enter the target drive (e.g., sda): " target_drive
 validate_input "$target_drive"
 
+# Update keys for install to prevent errors
+echo "Updating keys for install"
+pacman -Syy
+pacman-key --init
+pacman-key --populate
+pacman -S archlinux-keyring --noconfirm
+
 # Load selected keyboard layout
 echo "Step 2: Loading selected keyboard layout..."
 loadkeys $keyboard_layout
@@ -99,7 +106,7 @@ swapon /dev/${target_drive}2
 
 # Install base system and extras
 echo "Step 5: Installing base system and extras... may take from 5-15 minutes depending on network speeds"
-pacstrap /mnt base linux linux-firmware sof-firmware nano networkmanager grub efibootmgr base-devel git neovim
+pacstrap /mnt base linux linux-firmware sof-firmware nano networkmanager grub efibootmgr base-devel git neovim --noconfirm
 echo "Base system installed succesfully!"
 
 # Generate fstab
