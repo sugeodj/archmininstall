@@ -49,6 +49,17 @@ If you're using Wi-Fi, you need to connect to your network before running the sc
     
 21. Follow the prompts to configure your system.
 
+## After Install
+
+If using wifi post install you will have to type the following commands to enable wifi, and connect.
+
+1. Type `sudo systemctl enable NetworkManager` to enable the service as it was installed with the base packages.
+
+2. Type `sudo systemctl start NetworkManager` to start the service.
+
+3. Lastly enter `nmtui` and follow the GUI to setup and connect to you wifi.
+
+- Note: `NetworkManager` is case-senstitive.
 ## Contributing
 
 If you'd like to contribute to this script, feel free to fork the repository and submit a pull request with your changes. Before making any changes, please review the code and make sure that your changes align with the goals of the script (i.e., automating the process of manually installing and setting up a minimal Arch Linux installation).
