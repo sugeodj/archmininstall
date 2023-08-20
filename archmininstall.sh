@@ -28,6 +28,23 @@ prompt_password() {
     done
 }
 
+# Function to prompt for drive type
+function get_drive_type() {
+  while true; do
+    read -p "Enter the type of system you are on (e.g UEFI or BIOS): " drive_type
+    case $drive_type in
+      UEFI|BIOS)
+        echo "Drive type is $drive_type"
+        break
+        ;;
+      *)
+        echo "Invalid input. Please enter either UEFI or BIOS."
+        ;;
+    esac
+  done
+}
+
+
 # Function to print error messages in red
 print_error() {
     echo -e "\033[31mError: $1\033[0m"
@@ -75,12 +92,16 @@ keyboard_layout="${keyboard_layout:-$default_keyboard_layout}"
 validate_input "$keyboard_layout"
 
 # Prompt for locale
-read -p "Enter language/location (e.g., en_US.UTF-8) [$default_locale]: " locale
+read -p "Enter language/location (e.g., en_US.UTF-8)[$default_locale]: " locale
 locale="${locale:-$default_locale}"
 validate_input "$locale"
 
+# Prompt for drive
 read -p "Enter the target drive (e.g., sda): " target_drive
 validate_input "$target_drive"
+
+# Prompt for drive type
+get_drive_type
 
 # Update keys for install to prevent errors
 echo "Updating keys for install..."
@@ -110,23 +131,25 @@ else
 fi
 
 # Partitioning using fdisk
-fdisk /dev/$target_drive << EOF
-g # Create a new GPT partition table
-n # Create a new partition
-1 # Partition number
-   # Default: First sector
-+512M # Size
-n # Create a new partition
-2 # Partition number
-   # Default: First sector
-+8G # Size
-n # Create a new partition
-3 # Partition number
-   # Default: First sector
-   # Default: Last sector (remaining space)
-w # Write changes
-EOF
-
+echo "Step 1: Partitioning disk..."
+if [ "$drive_type" = "BIOS" ]; then
+  if echo -e "o\nn\np\n1\n\n+512M\nt\n1\nb\nn\np\n2\n\n\nw" | fdisk /dev/$target_drive; then
+    print_success "Disk partitioned successfully."
+  else
+    print_error "Failed to partition disk."
+    exit 1
+  fi
+elif [ "$drive_type" = "UEFI" ]; then
+  if echo -e "g\nn\n1\n\n+512M\nt\n1\n1\nn\n2\n\n\nw" | fdisk /dev/$target_drive; then
+    print_success "Disk partitioned successfully."
+  else
+    print_error "Failed to partition disk."
+    exit 1
+  fi
+else
+  print_error "Invalid drive type. Please enter either UEFI or BIOS."
+  exit 1
+fi
 
 # Formatting
 echo "Step 4: Formatting partitions..."
@@ -198,4 +221,3 @@ echo "1"
 sleep 1
 echo "Enjoy arch linux!" 
 exit && umount -a && reboot
-
