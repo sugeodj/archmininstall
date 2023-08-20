@@ -130,17 +130,18 @@ else
     exit 1
 fi
 
-# Partitioning using fdisk
-echo "Step 1: Partitioning disk..."
+
+# Partitioning and format using fdisk
+echo "Step 3: Partitioning disk and formatting partitions..."
 if [ "$drive_type" = "BIOS" ]; then
-  if echo -e "o\nn\np\n1\n\n+512M\nt\n1\nb\nn\np\n2\n\n\nw" | fdisk /dev/$target_drive; then
+  if echo -e "o\nn\n\n\n+512M\nn\nn\n\n\n+8G\nn\nn\n\n\n\nw\n" | fdisk /dev/$target_drive; then
     print_success "Disk partitioned successfully."
   else
     print_error "Failed to partition disk."
     exit 1
   fi
 elif [ "$drive_type" = "UEFI" ]; then
-  if echo -e "g\nn\n1\n\n+512M\nt\n1\n1\nn\n2\n\n\nw" | fdisk /dev/$target_drive; then
+  if echo -e "g\nn\n\n\n+512M\nn\nn\n\n\n+8G\nn\nn\n\n\n\nw\n" | fdisk /dev/$target_drive; then
     print_success "Disk partitioned successfully."
   else
     print_error "Failed to partition disk."
@@ -152,13 +153,13 @@ else
 fi
 
 # Formatting
-echo "Step 4: Formatting partitions..."
-if mkfs.fat -F 32 /dev/${target_drive}1 && mkswap /dev/${target_drive}2 && mkfs.ext4 /dev/${target_drive}3 && mount /dev/${target_drive}3 /mnt && mkdir -p /mnt/boot/efi && mount /dev/${target_drive}1 /mnt/boot/efi && swapon /dev/${target_drive}2 -f; then
-    print_success "Partitions formatted and mounted successfully."
-else
-    print_error "Failed to format partitions."
-    exit 1
-fi
+# echo "Step 4: Formatting partitions..."
+# if mkfs.fat -F 32 /dev/${target_drive}1 && mkswap /dev/${target_drive}2 && mkfs.ext4 /dev/${target_drive}3 && mount /dev/${target_drive}3 /mnt && mkdir -p /mnt/boot/efi && mount /dev/${target_drive}1 /mnt/boot/efi && swapon /dev/${target_drive}2 -f; then
+#     print_success "Partitions formatted and mounted successfully."
+# else
+#     print_error "Failed to format partitions."
+#     exit 1
+# fi
 
 # Install base system and extras
 echo "Step 5: Installing base system and extras... (may take from 5-15 minutes depending on network speeds)"
