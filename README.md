@@ -49,16 +49,6 @@ If you're using Wi-Fi, you need to connect to your network before running the sc
     
 21. Follow the prompts to configure your system.
 
-- Note: I configured the script to install `neovim` as the base editor instead of `nano`, `nano` is not installed.
-
-## Disclaimer
-
-GitHub Copilot: Certainly! Here's a revised disclaimer section that's less hostile:
-
-## Contributing
-
-GitHub Copilot: Certainly! Here's a possible section on contributing to your Arch Minimal Install Script:
-
 ## Contributing
 
 If you'd like to contribute to this script, feel free to fork the repository and submit a pull request with your changes. Before making any changes, please review the code and make sure that your changes align with the goals of the script (i.e., automating the process of manually installing and setting up a minimal Arch Linux installation).
