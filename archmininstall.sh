@@ -134,14 +134,14 @@ fi
 # Partitioning and format using fdisk
 echo "Step 3: Partitioning disk and formatting partitions..."
 if [ "$drive_type" = "BIOS" ]; then
-  if echo -e "o\nn\n\n\n+512M\nn\nn\n\n\n+8G\nn\nn\n\n\n\nw\n" | fdisk /dev/$target_drive; then
+  if echo -e "o\nn\n \n \n \n+512M\nn\nn\n \n \n \n+8G\nn\nn\n \n \n \n \nw\n" | fdisk /dev/$target_drive; then
     print_success "Disk partitioned successfully."
   else
     print_error "Failed to partition disk."
     exit 1
   fi
 elif [ "$drive_type" = "UEFI" ]; then
-  if echo -e "g\nn\n\n\n+512M\nn\nn\n\n\n+8G\nn\nn\n\n\n\nw\n" | fdisk /dev/$target_drive; then
+  if echo -e "g\nn\n \n \n \n+512M\nn\nn\n \n \n \n+8G\nn\nn\n \n \n \n \nw\n" | fdisk /dev/$target_drive; then
     print_success "Disk partitioned successfully."
   else
     print_error "Failed to partition disk."
