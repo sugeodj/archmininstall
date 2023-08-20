@@ -225,6 +225,7 @@ fi
 
 # Exit chroot
 print_success "Installation complete! Exiting chroot, umounting drives, and rebooting..."
+exit
 echo "5"
 sleep 1
 echo "4"
@@ -236,4 +237,6 @@ sleep 1
 echo "1"
 sleep 1
 echo "Enjoy arch linux!" 
-exit && umount -a && reboot
+umount -a
+reboot
+
