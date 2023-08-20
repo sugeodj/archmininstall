@@ -161,6 +161,12 @@ fi
 #     exit 1
 # fi
 
+# Mount the drives
+echo "mount /dev/sda3 /mnt"
+echo "mkdir -p /mnt/boot/efi"
+echo "mount /dev/sda1 /mnt/boot/efi"
+echo "swapon /dev/sda2"
+
 # Install base system and extras
 echo "Step 5: Installing base system and extras... (may take from 5-15 minutes depending on network speeds)"
 if pacstrap /mnt base linux linux-firmware sof-firmware nano networkmanager grub efibootmgr base-devel git neovim --noconfirm; then
