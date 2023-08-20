@@ -215,7 +215,7 @@ if arch-chroot /mnt /bin/bash -c "
     useradd -m -G wheel $username;
     echo '$username:$user_password' | chpasswd;
     echo 'Step 14: Allowing superusers to use sudo...';
-    sed -i '/%wheel ALL=(ALL) ALL/s/^# //' /etc/sudoers
+    sed -i 's|^# %wheel ALL=(ALL:ALL) ALL|%wheel ALL=(ALL:ALL) ALL|' /etc/sudoers
 "; then
     print_success "Chroot environment set up successfully."
 else
