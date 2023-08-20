@@ -152,20 +152,29 @@ else
   exit 1
 fi
 
-# Formatting
-# echo "Step 4: Formatting partitions..."
-# if mkfs.fat -F 32 /dev/${target_drive}1 && mkswap /dev/${target_drive}2 && mkfs.ext4 /dev/${target_drive}3 && mount /dev/${target_drive}3 /mnt && mkdir -p /mnt/boot/efi && mount /dev/${target_drive}1 /mnt/boot/efi && swapon /dev/${target_drive}2 -f; then
-#     print_success "Partitions formatted and mounted successfully."
-# else
-#     print_error "Failed to format partitions."
-#     exit 1
-# fi
 
 # Mount the drives
-echo "mount /dev/sda3 /mnt"
-echo "mkdir -p /mnt/boot/efi"
-echo "mount /dev/sda1 /mnt/boot/efi"
-echo "swapon /dev/sda2"
+echo "Step 4: Mounting drives..."
+if mount /dev/${target_drive}3 /mnt; then
+  print_success "Root partition mounted successfully."
+else
+  print_error "Failed to mount root partition."
+  exit 1
+fi
+
+if mkdir -p /mnt/boot/efi && mount /dev/${target_drive}1 /mnt/boot/efi; then
+  print_success "EFI partition mounted successfully."
+else
+  print_error "Failed to mount EFI partition."
+  exit 1
+fi
+
+if swapon /dev/${target_drive}2; then
+  print_success "Swap partition activated successfully."
+else
+  print_error "Failed to activate swap partition."
+  exit 1
+fi
 
 # Install base system and extras
 echo "Step 5: Installing base system and extras... (may take from 5-15 minutes depending on network speeds)"
