@@ -140,7 +140,7 @@ if [ "$drive_type" = "BIOS" ]; then
     exit 1
   fi
 elif [ "$drive_type" = "UEFI" ]; then
-  if echo -e "g\nn\n \n \n \n+512M\nn\nn\n \n \n \n+8G\nn\nn\n \n \n \n \nw\n" | fdisk /dev/$target_drive; then
+  if echo -e "g\nn\n \n \n+512M\nn\nn\n \n \n+8G\nn\nn\n \n \n \nw\n" | fdisk /dev/$target_drive; then
     print_success 10 "Disk partitioned successfully."
   else
     print_error "Failed to partition disk."
