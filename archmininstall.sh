@@ -151,6 +151,12 @@ else
   exit 1
 fi
 
+# Formatting drive
+mkfs.fat -F 32 /dev/${target_drive}1
+mkfs.ext4 /dev/${target_drive}3
+mkswap /dev/${target_drive}2
+
+
 sleep 5
 
 # Mount the drives
